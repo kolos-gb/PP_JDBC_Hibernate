@@ -12,65 +12,79 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
-    Connection connection = Util.getConnection();
-
     public UserDaoJDBCImpl() {
 
     }
 
     public void createUsersTable() {
-        String sqlCreateTable = """
-                CREATE TABLE IF NOT EXISTS users (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(50) NOT NULL,
-                    lastName VARCHAR(50) NOT NULL,
-                    age TINYINT NOT NULL
-                );
-                """;
-        try (Statement statement = connection.createStatement()) {
-            statement.execute(sqlCreateTable);
+        try (Connection connection = Util.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(50) NOT NULL,
+                        lastName VARCHAR(50) NOT NULL,
+                        age TINYINT NOT NULL
+                    );
+                    """);
+            connection.commit();
         } catch (SQLException e) {
             System.err.println("Error creating table: " + e.getMessage());
         }
     }
 
     public void dropUsersTable() {
-        String sqlDropTable = "DROP TABLE IF EXISTS users";
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sqlDropTable);
+        try (Connection connection = Util.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DROP TABLE IF EXISTS users");
+            connection.commit();
         } catch (SQLException e) {
             System.out.println("Error " + e.getMessage());
         }
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        String sqlSave = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sqlSave)) {
-            preparedStatement.setString(1, name);
-            preparedStatement.setString(2, lastName);
-            preparedStatement.setByte(3, age);
-            preparedStatement.executeUpdate();
-            System.out.println("User с именем — " + name + " добавлен в базу данных");
+        try (Connection connection = Util.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)")) {
+            try {
+                preparedStatement.setString(1, name);
+                preparedStatement.setString(2, lastName);
+                preparedStatement.setByte(3, age);
+                preparedStatement.executeUpdate();
+                System.out.println("User с именем — " + name + " добавлен в базу данных");
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                System.err.println("An error when rolling out the transaction:" + e.getMessage());
+            }
         } catch (SQLException e) {
             System.err.println("Error saving user: " + e.getMessage());
         }
     }
 
     public void removeUserById(long id) {
-        String sqlRemove = "DELETE FROM users WHERE id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sqlRemove)) {
-            preparedStatement.setLong(1, id);
-            preparedStatement.executeUpdate();
+        try (Connection connection = Util.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "DELETE FROM users WHERE id = ?")) {
+            try {
+                preparedStatement.setLong(1, id);
+                preparedStatement.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                System.err.println("An error when rolling out the transaction:" + e.getMessage());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public List<User> getAllUsers() {
-        String sqlAllUsers = "SELECT * FROM users";
         List<User> users = new ArrayList<>();
-        try (Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(sqlAllUsers)) {
+        try (Connection connection = Util.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT * FROM users")) {
             while (resultSet.next()) {
                 User user = new User();
                 user.setId(resultSet.getLong("id"));
@@ -79,17 +93,23 @@ public class UserDaoJDBCImpl implements UserDao {
                 user.setAge(resultSet.getByte("age"));
                 users.add(user);
             }
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        System.out.println(users);
         return users;
     }
 
     public void cleanUsersTable() {
-        String sqlDelete = "DELETE from users";
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sqlDelete);
+        try (Connection connection = Util.getConnection();
+             Statement statement = connection.createStatement()) {
+            try {
+                statement.executeUpdate("DELETE from users");
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                System.err.println("An error when rolling out the transaction:" + e.getMessage());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

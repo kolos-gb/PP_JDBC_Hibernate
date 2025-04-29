@@ -13,9 +13,11 @@ public class Util {
     public static Connection getConnection() {
         Connection connection = null;
         try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            connection.setAutoCommit(false);
             System.out.println("Connection successful");
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
              throw new RuntimeException("Connection failed");
         }
         return connection;
