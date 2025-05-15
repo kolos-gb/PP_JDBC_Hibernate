@@ -5,10 +5,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
 public class Util {
     // реализуйте настройку соеденения с БД
     private static final String URL = "jdbc:mysql://localhost:3306/pp_db1";
@@ -17,27 +13,14 @@ public class Util {
 
     private static SessionFactory sessionFactory;
 
-    public static Connection getConnection() {
-        Connection connection = null;
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-            connection.setAutoCommit(false);
-            System.out.println("Connection successful");
-        } catch (SQLException | ClassNotFoundException e) {
-             throw new RuntimeException("Connection failed");
-        }
-        return connection;
-    }
-
     public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             try {
                 Configuration configuration = new Configuration();
                 configuration.setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
                 configuration.setProperty("hibernate.connection.url", "jdbc:mysql://localhost:3306/pp_db1");
-                configuration.setProperty("hibernate.connection.username", "root");
-                configuration.setProperty("hibernate.connection.password", "34547809A");
+                configuration.setProperty("hibernate.connection.username", USERNAME);
+                configuration.setProperty("hibernate.connection.password", PASSWORD);
                 configuration.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
                 configuration.setProperty("hibernate.show_sql", "true");
                 configuration.setProperty("hibernate.hbm2ddl.auto", "update");
